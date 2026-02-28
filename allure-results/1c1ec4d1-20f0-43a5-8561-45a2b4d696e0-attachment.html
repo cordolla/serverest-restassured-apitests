@@ -1,0 +1,31 @@
+<div>PUT to https://serverest.dev/produtos/ID_QUALQUER</div>
+
+<h4>Body</h4>
+<div>
+    <pre class="preformated-text">
+{
+    &quot;nome&quot;: &quot;Sleek Paper Coat 58657&quot;,
+    &quot;preco&quot;: 212,
+    &quot;descricao&quot;: &quot;Cotton&quot;,
+    &quot;quantidade&quot;: 74
+}    </pre>
+</div>
+
+<h4>Headers</h4>
+<div>
+        <div>Authorization: token-completamente-errado-123</div>
+        <div>Accept: */*</div>
+        <div>Content-Type: application/json</div>
+</div>
+
+
+
+<h4>Curl</h4>
+<div>
+curl -v -X PUT &#39;https://serverest.dev/produtos/ID_QUALQUER&#39; -H &#39;Authorization: token-completamente-errado-123&#39; -H &#39;Accept: */*&#39; -H &#39;Content-Type: application/json&#39; -d &#39;{
+    &quot;nome&quot;: &quot;Sleek Paper Coat 58657&quot;,
+    &quot;preco&quot;: 212,
+    &quot;descricao&quot;: &quot;Cotton&quot;,
+    &quot;quantidade&quot;: 74
+}&#39;
+</div>

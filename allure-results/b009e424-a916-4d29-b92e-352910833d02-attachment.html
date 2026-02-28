@@ -1,0 +1,35 @@
+<div>POST to https://serverest.dev/carrinhos</div>
+
+<h4>Body</h4>
+<div>
+    <pre class="preformated-text">
+{
+    &quot;produtos&quot;: [
+        {
+            &quot;idProduto&quot;: &quot;ID_INVENTADO_123&quot;,
+            &quot;quantidade&quot;: 1
+        }
+    ]
+}    </pre>
+</div>
+
+<h4>Headers</h4>
+<div>
+        <div>Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJhc2hhZC5sdWV0dGdlbkBnbWFpbC5jb20iLCJwYXNzd29yZCI6InRlc3RlMTIzIiwiaWF0IjoxNzcyMjIwMjI3LCJleHAiOjE3NzIyMjA4Mjd9.86nJmlN8z6rKIyitF9KjIh_KHLp9xZmMDIxmpCkWzys</div>
+        <div>Accept: */*</div>
+        <div>Content-Type: application/json</div>
+</div>
+
+
+
+<h4>Curl</h4>
+<div>
+curl -v -X POST &#39;https://serverest.dev/carrinhos&#39; -H &#39;Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJhc2hhZC5sdWV0dGdlbkBnbWFpbC5jb20iLCJwYXNzd29yZCI6InRlc3RlMTIzIiwiaWF0IjoxNzcyMjIwMjI3LCJleHAiOjE3NzIyMjA4Mjd9.86nJmlN8z6rKIyitF9KjIh_KHLp9xZmMDIxmpCkWzys&#39; -H &#39;Accept: */*&#39; -H &#39;Content-Type: application/json&#39; -d &#39;{
+    &quot;produtos&quot;: [
+        {
+            &quot;idProduto&quot;: &quot;ID_INVENTADO_123&quot;,
+            &quot;quantidade&quot;: 1
+        }
+    ]
+}&#39;
+</div>

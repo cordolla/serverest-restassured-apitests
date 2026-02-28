@@ -1,0 +1,1 @@
+{"uuid":"1176edab-82e6-4c4f-8891-1b59973b7e76","name":"TC-CART-013 | Validar que a API bloqueia requisições sem token","children":["8acc4c2d-2379-4060-8845-e36c870d6b2c"],"befores":[],"afters":[],"start":1772220223155,"stop":1772220223620}
