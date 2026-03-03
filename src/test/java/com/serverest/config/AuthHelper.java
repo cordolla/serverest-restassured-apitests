@@ -1,36 +1,47 @@
 package com.serverest.config;
 
 import com.serverest.model.LoginRequest;
+import com.serverest.model.UserRequest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+
 import static io.restassured.RestAssured.given;
 
 public class AuthHelper {
 
     private static String userToken;
 
-    public static void loginUserStoreToken(){
+    public static String loginUserStoreToken(String email, String password) {
+        LoginRequest loginRequest = new LoginRequest(email, password);
 
-        given()
+        Response response = given()
+            .contentType(ContentType.JSON)
+            .body(loginRequest)
+            .when()
+            .post("/login");
+
+        if (response.getStatusCode() != 200) {
+            System.out.println("Admin não encontrado, criando usuário semeador...");
+            setupInitialAdmin(email, password);
+
+            response = given()
                 .contentType(ContentType.JSON)
-                .body("{\"nome\": \"Fulano QA\", \"email\": \"marcelotestesadm@qa.com\", \"password\": \"teste\", \"administrador\": \"true\"}")
+                .body(loginRequest)
                 .when()
-                .post("https://serverest.dev/usuarios");
-
-        LoginRequest userLogin = new LoginRequest("marcelotestesadm@qa.com", "teste");
-
-        Response userResponse = given()
-                .contentType(ContentType.JSON)
-                .body(userLogin)
-                .when()
-                .post("https://serverest.dev/login");
-
-        if (userResponse.statusCode() == 200){
-            userToken = userResponse.jsonPath().getString("authorization");
-        } else {
-            System.out.println("FALHA NO LOGIN: " + userResponse.asString());
-            throw new RuntimeException("Não foi possível gerar o token de acesso.");
+                .post("/login");
         }
+
+        userToken = response.path("authorization");
+        return userToken;
+    }
+
+    private static void setupInitialAdmin(String email, String password) {
+        UserRequest admin = new UserRequest("Admin Semeador", email, password, "true");
+        given()
+            .contentType(ContentType.JSON)
+            .body(admin)
+            .when()
+            .post("/usuarios");
     }
 
     public static String getUserToken() {

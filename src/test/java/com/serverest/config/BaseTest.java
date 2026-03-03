@@ -9,24 +9,30 @@ import org.junit.jupiter.api.BeforeAll;
 import static io.restassured.RestAssured.given;
 
 public abstract class BaseTest {
-    protected static final String BASE_URL = "https://serverest.dev";
+
     protected static String userToken;
 
     @BeforeAll
-    static void setupBase() {
-        RestAssured.baseURI = BASE_URL;
+    public static void setupBase() {
+        RestAssured.baseURI = ConfigurationManager.getProperty("base.uri");
+
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        AuthHelper.loginUserStoreToken();
-
-        userToken = AuthHelper.getUserToken();
+        userToken = AuthHelper.loginUserStoreToken(
+            ConfigurationManager.getProperty("admin.email"),
+            ConfigurationManager.getProperty("admin.password")
+        );
     }
 
     public static RequestSpecification givenWithAllure() {
-        return given()
-                .filter(new AllureRestAssured())
-                .contentType(ContentType.JSON)
-                .log().all();
-    }
+        RequestSpecification spec = given()
+            .filter(new AllureRestAssured())
+            .contentType(ContentType.JSON);
 
+        if ("true".equalsIgnoreCase(ConfigurationManager.getProperty("log.all"))) {
+            spec.log().all();
+        }
+
+        return spec;
+    }
 }
