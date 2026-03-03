@@ -30,16 +30,11 @@ public abstract class BaseTest {
         CartClient.concluirCompra(userToken);
     }
 
+
     public static RequestSpecification givenWithAllure() {
-        RequestSpecification spec = given()
+        return given()
             .filter(new AllureRestAssured())
             .contentType(ContentType.JSON);
-
-        if ("true".equalsIgnoreCase(ConfigurationManager.getProperty("log.all"))) {
-            spec.log().all();
-        }
-
-        return spec;
     }
 
 

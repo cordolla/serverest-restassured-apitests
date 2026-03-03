@@ -154,7 +154,6 @@ public class ProductTest extends BaseTest {
         ProductClient.excluirProduto(idProduct, " ")
             .then()
             .statusCode(401)
-            .log().all()
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
     }
 

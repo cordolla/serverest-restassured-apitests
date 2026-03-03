@@ -30,7 +30,7 @@ public class CartClient extends BaseTest {
 
     public static Response concluirCompra(String token) {
         return givenWithAllure()
-            .header("Authorization", token)
+            .header("authorization", token)
             .when()
             .delete(ENDPOINT_CARRINHOS + "/concluir-compra");
     }

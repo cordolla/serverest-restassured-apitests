@@ -24,11 +24,11 @@ jobs:
 
       - name: Create Temporary Config File
         run: |
-          mkdir -p src/test/resources
-          echo "base.uri=https://serverest.dev" > src/test/resources/config.properties
-          echo "admin.email=admin_pipeline@qa.com" >> src/test/resources/config.properties
-          echo "admin.password=teste" >> src/test/resources/config.properties
-          echo "log.all=false" >> src/test/resources/config.properties
+          mkdir -p src/test/resources/config
+          echo "base.uri=https://serverest.dev" > src/test/resources/config/config.properties
+          echo "admin.email=admin_pipeline@qa.com" >> src/test/resources/config/config.properties
+          echo "admin.password=teste" >> src/test/resources/config/config.properties
+          echo "log.all=false" >> src/test/resources/config/config.properties
 
       - name: Run API Tests
         run: mvn clean test
