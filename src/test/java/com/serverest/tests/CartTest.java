@@ -3,6 +3,7 @@ package com.serverest.tests;
 import com.serverest.client.CartClient;
 import com.serverest.client.ProductClient;
 import com.serverest.client.UserClient;
+import com.serverest.config.AuthHelper;
 import com.serverest.config.BaseTest;
 import com.serverest.datafactory.CartDataFactory;
 import com.serverest.datafactory.ProductDataFactory;
@@ -29,14 +30,19 @@ public class CartTest extends BaseTest {
     void cadastrarCarrinhoComSucesso() {
 
         ProductRequest produto = ProductDataFactory.novoProdutoValido();
-        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
+        var responseProduto = ProductClient.cadastrarProduto(produto, userToken)
+            .then()
+            .statusCode(201)
+            .extract();
+
+        String idProduto = responseProduto.path("_id");
+        int estoqueDisponivel = produto.getQuantidade();
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
         UserClient.cadastrarUsuario(usuario);
+        String tokenUsuario = AuthHelper.loginUserStoreToken(usuario.getEmail(), usuario.getPassword());
 
-        String tokenUsuario = login(usuario);
-
-        CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 5);
+        CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, estoqueDisponivel);
 
         CartClient.cadastrarCarrinho(carrinho, tokenUsuario)
             .then()
