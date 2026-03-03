@@ -1,0 +1,4 @@
+base.uri=https://serverest.dev
+admin.email=
+admin.password=
+log.all=false
