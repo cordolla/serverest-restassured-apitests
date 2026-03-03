@@ -16,6 +16,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
 import static com.serverest.utils.TestHelpers.login;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -187,5 +188,15 @@ public class UsersTest extends BaseTest {
         response.then()
             .statusCode(400)
             .body("message", equalTo("Este email já está sendo usado"));
+    }
+
+    @Test
+    @Tag("contract")
+    @DisplayName("CT-USERS-001 | Validar contrato da listagem de usuários")
+    void validarContratoListaUsuarios() {
+        UserClient.listarUsuarios()
+            .then()
+            .statusCode(200)
+            .body(matchesJsonSchemaInClasspath("schemas/usuarios-lista-schema.json"));
     }
 }

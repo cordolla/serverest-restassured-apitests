@@ -1,7 +1,5 @@
 package com.serverest.config;
 
-import com.serverest.model.LoginRequest;
-import com.serverest.model.UserRequest;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;

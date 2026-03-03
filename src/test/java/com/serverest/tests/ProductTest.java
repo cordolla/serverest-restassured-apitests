@@ -15,6 +15,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
 import static com.serverest.utils.TestHelpers.login;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -240,5 +241,15 @@ public class ProductTest extends BaseTest {
             .then()
             .statusCode(403)
             .body("message", equalTo("Rota exclusiva para administradores"));
+    }
+
+    @Test
+    @Tag("contract")
+    @DisplayName("TC-PRODUCTS-001 | Validar contrato da listagem de produtos")
+    void validarContratoListaProdutos() {
+        ProductClient.listarProdutos()
+            .then()
+            .statusCode(200)
+            .body(matchesJsonSchemaInClasspath("schemas/produtos-schema.json"));
     }
 }

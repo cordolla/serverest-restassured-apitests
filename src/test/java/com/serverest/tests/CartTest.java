@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static com.serverest.utils.TestHelpers.*;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -259,5 +260,15 @@ public class CartTest extends BaseTest {
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
+    }
+
+    @Test
+    @Tag("contract")
+    @DisplayName("TC-CARTS-001 | Validar contrato da listagem de carrinhos")
+    void validarContratoListaCarrinhos() {
+        CartClient.listarCarrinhos()
+            .then()
+            .statusCode(200)
+            .body(matchesJsonSchemaInClasspath("schemas/carrinhos-schema.json"));
     }
 }
