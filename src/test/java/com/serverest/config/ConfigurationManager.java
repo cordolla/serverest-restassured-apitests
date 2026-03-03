@@ -1,7 +1,7 @@
 package com.serverest.config;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigurationManager {
@@ -10,11 +10,16 @@ public class ConfigurationManager {
     static {
         try {
             properties = new Properties();
-            FileInputStream file = new FileInputStream("src/test/resources/config.properties");
-            properties.load(file);
+            InputStream inputStream = ConfigurationManager.class.getClassLoader()
+                .getResourceAsStream("config/config.properties");
+
+            if (inputStream == null) {
+                throw new RuntimeException("Arquivo config/config.properties não encontrado em src/test/resources");
+            }
+
+            properties.load(inputStream);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Falha ao carregar o arquivo config.properties");
+            throw new RuntimeException("Falha ao carregar o arquivo de configuração", e);
         }
     }
 

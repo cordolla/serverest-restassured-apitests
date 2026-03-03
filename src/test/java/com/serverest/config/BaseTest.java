@@ -15,7 +15,6 @@ public abstract class BaseTest {
     @BeforeAll
     public static void setupBase() {
         RestAssured.baseURI = ConfigurationManager.getProperty("base.uri");
-
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
         userToken = AuthHelper.loginUserStoreToken(
