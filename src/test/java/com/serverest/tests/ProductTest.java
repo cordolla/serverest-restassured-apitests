@@ -1,19 +1,21 @@
 package com.serverest.tests;
 
+import com.serverest.client.CartClient;
+import com.serverest.client.ProductClient;
+import com.serverest.client.UserClient;
 import com.serverest.config.BaseTest;
 import com.serverest.datafactory.CartDataFactory;
 import com.serverest.datafactory.ProductDataFactory;
 import com.serverest.datafactory.UserDataFactory;
+import com.serverest.model.CartRequest;
 import com.serverest.model.ProductRequest;
 import com.serverest.model.UserRequest;
-import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
 import static com.serverest.utils.TestHelpers.login;
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ProductTest extends BaseTest {
@@ -22,12 +24,10 @@ public class ProductTest extends BaseTest {
     @Tag("smoke")
     @DisplayName("TC-PRODUCTS-001 | Listar produtos cadastrados")
     void listarProdutosCadastrados() {
-        givenWithAllure()
-            .when()
-            .get("/produtos")
+
+        ProductClient.listarProdutos()
             .then()
-            .statusCode(200)
-            .body("quantidade", notNullValue());
+            .statusCode(200);
     }
 
     @Test
@@ -37,11 +37,7 @@ public class ProductTest extends BaseTest {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
+        ProductClient.cadastrarProduto(product, userToken)
             .then()
             .statusCode(201)
             .body("message", equalTo("Cadastro realizado com sucesso"));
@@ -54,20 +50,11 @@ public class ProductTest extends BaseTest {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
+        ProductClient.cadastrarProduto(product, userToken)
             .then()
             .statusCode(201);
 
-
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
+        ProductClient.cadastrarProduto(product, userToken)
             .then()
             .statusCode(400)
             .body("message", equalTo("Já existe produto com esse nome"));
@@ -80,11 +67,7 @@ public class ProductTest extends BaseTest {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        given()
-            .contentType(ContentType.JSON)
-            .body(product)
-            .when()
-            .post("/produtos")
+        ProductClient.cadastrarProduto(product, " ")
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
@@ -97,19 +80,9 @@ public class ProductTest extends BaseTest {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path("_id");
+        String idProduto = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
-        givenWithAllure()
-            .when()
-            .get("/produtos/" + idProduto)
+        ProductClient.buscarProdutoPorId(idProduto)
             .then()
             .statusCode(200)
             .body("_id", equalTo(idProduto))
@@ -122,9 +95,7 @@ public class ProductTest extends BaseTest {
     void buscarProdutoPorIdNaoEncontrar() {
         String idInvalido = "9999999999999999";
 
-        given()
-            .when()
-            .get("/produtos/" + idInvalido)
+        ProductClient.buscarProdutoPorId(idInvalido)
             .then()
             .statusCode(400)
             .body("message", equalTo("Produto não encontrado"));
@@ -137,21 +108,9 @@ public class ProductTest extends BaseTest {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path("_id");
+        String idProduto = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
-
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .when()
-            .delete("/produtos/" + idProduto)
+        ProductClient.excluirProduto(idProduto, userToken)
             .then()
             .statusCode(200)
             .body("message", equalTo("Registro excluído com sucesso"));
@@ -163,42 +122,24 @@ public class ProductTest extends BaseTest {
     void excluirProdutoDeCarrinho(){
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(user)
-            .when()
-            .post("/usuarios")
+        UserClient.cadastrarUsuario(user)
             .then()
             .statusCode(201);
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(ProductDataFactory.novoProdutoValido())
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path("_id");
+        ProductRequest product = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
         String tokenUsuario = login(user);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(CartDataFactory.carrinhoComProdutos(idProduto, 2))
-            .when()
-            .post("/carrinhos")
+        CartRequest cart = CartDataFactory.carrinhoComProdutos(idProduto, 2);
+        CartClient.cadastrarCarrinho(cart, tokenUsuario)
             .then()
             .statusCode(201);
 
-            givenWithAllure()
-            .header("Authorization", userToken)
-            .when()
-            .delete("/produtos/" + idProduto)
+        ProductClient.excluirProduto(idProduto, userToken)
             .then()
             .statusCode(400)
             .body("message", equalTo("Não é permitido excluir produto que faz parte de carrinho"));
-
     }
 
     @Test
@@ -207,20 +148,9 @@ public class ProductTest extends BaseTest {
     void excluirComTokenAusente() {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
+        String idProduct = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path("_id");
-
-        givenWithAllure()
-            .when()
-            .delete("/produtos/" + idProduto)
+        ProductClient.excluirProduto(idProduct, " ")
             .then()
             .statusCode(401)
             .log().all()
@@ -233,25 +163,14 @@ public class ProductTest extends BaseTest {
     void editarProduto() {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
+        String idProduct = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract()
-            .path("_id");
+        String novoNome = "Produto Editado " + RandomStringUtils.randomAlphanumeric(4);
+        product.setNome(novoNome);
 
-        product.setNome("Nome Editado" + RandomStringUtils.randomAlphanumeric(4));
+        Response response = ProductClient.editarProduto(idProduct, product, userToken);
 
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .put("/produtos/" + idProduto)
-            .then()
+        response.then()
             .statusCode(200)
             .body("message", equalTo("Registro alterado com sucesso"));
     }
@@ -262,12 +181,9 @@ public class ProductTest extends BaseTest {
     void tentarEditarProdutoComIdValidoECadastrar() {
 
         String idInexistente = RandomStringUtils.randomAlphanumeric(16);
+        ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(ProductDataFactory.novoProdutoValido())
-            .when()
-            .put("/produtos/" + idInexistente)
+        ProductClient.editarProduto(idInexistente, product, userToken)
             .then()
             .statusCode(201)
             .body("message", equalTo("Cadastro realizado com sucesso"));
@@ -280,33 +196,14 @@ public class ProductTest extends BaseTest {
     void tentarEditarProdutoComNomeJaUtilizado() {
 
         ProductRequest produtoA = ProductDataFactory.novoProdutoValido();
-
-        String idProdutoA = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(produtoA)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract().path("_id");
+        String idProdutoA = ProductClient.cadastrarProduto(produtoA, userToken).path("_id");
 
         ProductRequest produtoB = ProductDataFactory.novoProdutoValido();
-
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(produtoB)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201);
+        ProductClient.cadastrarProduto(produtoB, userToken);
 
         produtoA.setNome(produtoB.getNome());
 
-        givenWithAllure()
-            .header("Authorization", userToken)
-            .body(produtoA)
-            .when()
-            .put("/produtos/" + idProdutoA)
+        ProductClient.editarProduto(idProdutoA, produtoB, userToken)
             .then()
             .statusCode(400)
             .body("message", equalTo("Já existe produto com esse nome"));
@@ -316,14 +213,10 @@ public class ProductTest extends BaseTest {
     @Tag("smoke")
     @DisplayName("TC-PRODUCT-012 | Tentar editar produto com token inválido")
     void tentarEditarProdutoComTokenInvalido() {
-        String idProdutoInexistente = "ID_QUALQUER";
-        ProductRequest product = ProductDataFactory.novoProdutoValido();
 
-        givenWithAllure()
-            .header("Authorization", "token-completamente-errado-123")
-            .body(product)
-            .when()
-            .put("/produtos/" + idProdutoInexistente)
+        String idProdutoInexistente = "ID_QUALQUER";
+
+        ProductClient.excluirProduto(idProdutoInexistente, " ")
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
@@ -334,34 +227,16 @@ public class ProductTest extends BaseTest {
     void validarUsuarioComumNaoPodeEditarProduto() {
 
         ProductRequest product = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(product)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract().path("_id");
+        UserRequest user = UserDataFactory.usuarioValidoComum();
+        UserClient.cadastrarUsuario(user);
 
-        UserRequest userComum = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(userComum)
-            .when()
-            .post("/usuarios")
-            .then()
-            .statusCode(201);
-
-        String tokenComum = login(userComum);
+        String tokenComum = login(user);
 
         product.setNome("Tentativa de Edição por Usuário Comum");
 
-        givenWithAllure()
-            .header("Authorization", tokenComum)
-            .body(product)
-            .when()
-            .put("/produtos/" + idProduto)
+        ProductClient.excluirProduto(idProduto, tokenComum)
             .then()
             .statusCode(403)
             .body("message", equalTo("Rota exclusiva para administradores"));

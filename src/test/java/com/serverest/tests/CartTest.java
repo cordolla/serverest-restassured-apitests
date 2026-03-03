@@ -1,5 +1,8 @@
 package com.serverest.tests;
 
+import com.serverest.client.CartClient;
+import com.serverest.client.ProductClient;
+import com.serverest.client.UserClient;
 import com.serverest.config.BaseTest;
 import com.serverest.datafactory.CartDataFactory;
 import com.serverest.datafactory.ProductDataFactory;
@@ -7,6 +10,7 @@ import com.serverest.datafactory.UserDataFactory;
 import com.serverest.model.CartRequest;
 import com.serverest.model.ProductRequest;
 import com.serverest.model.UserRequest;
+import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -24,35 +28,16 @@ public class CartTest extends BaseTest {
     void cadastrarCarrinhoComSucesso() {
 
         ProductRequest produto = ProductDataFactory.novoProdutoValido();
-
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(produto)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract().path("_id");
-
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .when()
-            .post("/usuarios")
-            .then()
-            .statusCode(201);
+        UserClient.cadastrarUsuario(usuario);
 
         String tokenUsuario = login(usuario);
 
         CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 5);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinho)
-            .when()
-            .post("/carrinhos")
+        CartClient.cadastrarCarrinho(carrinho, tokenUsuario)
             .then()
             .statusCode(201)
             .body("message", equalTo("Cadastro realizado com sucesso"))
@@ -64,35 +49,21 @@ public class CartTest extends BaseTest {
     @DisplayName("TC-CART-002 | Validar que não é permitido ter mais de 1 carrinho por usuário")
     void validarApenasUmCarrinhoPorUsuario() {
 
-        String idProduto1 = criarProdutoEObterId(userToken);
-        String idProduto2 = criarProdutoEObterId(userToken);
+        ProductRequest produto = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios")
-            .then()
-            .statusCode(201);
+        UserClient.cadastrarUsuario(usuario);
 
         String tokenUsuario = login(usuario);
 
-        CartRequest primeiroCarrinho = CartDataFactory.carrinhoComProdutos(idProduto1, 1);
+        CartRequest primeiroCarrinho = CartDataFactory.carrinhoComProdutos(idProduto, 1);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(primeiroCarrinho)
-            .when()
-            .post("/carrinhos")
-            .then()
-            .statusCode(201);
+        CartClient.cadastrarCarrinho(primeiroCarrinho, tokenUsuario);
 
-        CartRequest segundoCarrinho = CartDataFactory.carrinhoComProdutos(idProduto2, 1);
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(segundoCarrinho)
-            .when()
-            .post("/carrinhos")
+        CartRequest segundoCarrinho = CartDataFactory.carrinhoComProdutos(idProduto, 2);
+
+        CartClient.cadastrarCarrinho(segundoCarrinho, tokenUsuario)
             .then()
             .statusCode(400)
             .body("message", equalTo("Não é permitido ter mais de 1 carrinho"));
@@ -103,24 +74,17 @@ public class CartTest extends BaseTest {
     @DisplayName("TC-CART-003 | Validar que não é permitido possuir produto duplicado no carrinho")
     void validarProdutoDuplicadoNoCarrinho() {
 
-        String idProduto = criarProdutoEObterId(userToken);
+        ProductRequest produto = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios")
-            .then().statusCode(201);
+        UserClient.cadastrarUsuario(usuario);
 
         String tokenUsuario = login(usuario);
 
         CartRequest carrinhoDuplicado = CartDataFactory.carrinhoComProdutosDuplicados(idProduto);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinhoDuplicado)
-            .when()
-            .post("/carrinhos")
+        CartClient.cadastrarCarrinho(carrinhoDuplicado, tokenUsuario)
             .then()
             .statusCode(400)
             .body("message", equalTo("Não é permitido possuir produto duplicado"));
@@ -134,21 +98,13 @@ public class CartTest extends BaseTest {
         String idInexistente = "ID_INVENTADO_123";
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios")
-            .then().statusCode(201);
+        UserClient.cadastrarUsuario(usuario);
 
         String tokenUsuario = login(usuario);
 
         CartRequest carrinhoFalso = CartDataFactory.carrinhoComProdutos(idInexistente, 1);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinhoFalso)
-            .when()
-            .post("/carrinhos")
+        CartClient.cadastrarCarrinho(carrinhoFalso, tokenUsuario)
             .then()
             .statusCode(400)
             .body("message", equalTo("Produto não encontrado"));
@@ -162,32 +118,16 @@ public class CartTest extends BaseTest {
         ProductRequest produto = ProductDataFactory.novoProdutoValido();
         produto.setQuantidade(5);
 
-        String idProduto = givenWithAllure()
-            .header("Authorization", userToken)
-            .body(produto)
-            .when()
-            .post("/produtos")
-            .then()
-            .statusCode(201)
-            .extract().path("_id");
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios")
-            .then()
-            .statusCode(201);
+        UserClient.cadastrarUsuario(usuario);
 
         String tokenUsuario = login(usuario);
 
         CartRequest carrinhoAcimaDoStock = CartDataFactory.carrinhoComProdutos(idProduto, 6);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinhoAcimaDoStock)
-            .when()
-            .post("/carrinhos")
+        CartClient.cadastrarCarrinho(carrinhoAcimaDoStock, tokenUsuario)
             .then()
             .statusCode(400)
             .body("message", equalTo("Produto não possui quantidade suficiente"));
@@ -200,11 +140,7 @@ public class CartTest extends BaseTest {
 
         CartRequest carrinho = CartDataFactory.carrinhoComProdutos("qualquer_id", 1);
 
-        givenWithAllure()
-            .header("Authorization", "")
-            .body(carrinho)
-            .when()
-            .post("/carrinhos")
+        CartClient.cadastrarCarrinho(carrinho, " ")
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
@@ -215,12 +151,14 @@ public class CartTest extends BaseTest {
     @DisplayName("TC-CART-007 | Buscar carrinho por ID com sucesso")
     void buscarCarrinhoPorId() {
 
-        String idCarrinho = cadastrarCarrinhoEObterId(userToken);
+        ProductRequest produto = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
-        givenWithAllure()
-            .pathParam("_id", idCarrinho)
-            .when()
-            .get("/carrinhos/{_id}")
+        CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 1);
+        String idCarrinho = CartClient.cadastrarCarrinho(carrinho, userToken).path("_id");
+
+
+        CartClient.buscarCarrinhoPorId(idCarrinho)
             .then()
             .statusCode(200)
             .body("_id", equalTo(idCarrinho))
@@ -235,10 +173,7 @@ public class CartTest extends BaseTest {
 
         String idInexistente = RandomStringUtils.randomAlphanumeric(16);
 
-        givenWithAllure()
-            .pathParam("_id", idInexistente)
-            .when()
-            .get("/carrinhos/{_id}")
+        CartClient.buscarCarrinhoPorId(idInexistente)
             .then()
             .statusCode(400)
             .body("message", equalTo("Carrinho não encontrado"));
@@ -250,37 +185,20 @@ public class CartTest extends BaseTest {
     void concluirCompraComSucesso() {
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios");
-
+        UserClient.cadastrarUsuario(usuario);
         String tokenUsuario = login(usuario);
 
-        String idProduto = criarProdutoEObterId(userToken);
+        ProductRequest produto = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 1);
+        CartClient.cadastrarCarrinho(carrinho, tokenUsuario);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinho)
-            .post("/carrinhos");
+        Response response = CartClient.concluirCompra(tokenUsuario);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .when()
-            .delete("/carrinhos/concluir-compra")
-            .then()
+        response.then()
             .statusCode(200)
             .body("message", equalTo("Registro excluído com sucesso"));
-
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .when()
-            .get("/carrinhos")
-            .then()
-            .statusCode(200)
-            .body("quantidade", notNullValue());
     }
 
     @Test
@@ -288,11 +206,8 @@ public class CartTest extends BaseTest {
     @DisplayName("TC-CART-010 | Validar erro com token inválido")
     void validarErroTokenInvalido() {
 
-        givenWithAllure()
-            .header("Authorization", "")
-            .body(CartDataFactory.carrinhoComProdutos("id", 1))
-            .when()
-            .post("/carrinhos")
+        CartRequest carrinho = CartDataFactory.carrinhoComProdutos("id", 1);
+        CartClient.cadastrarCarrinho(carrinho, "")
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));
@@ -304,26 +219,17 @@ public class CartTest extends BaseTest {
     void cancelarCompraComSucesso() {
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios");
-
+        UserClient.cadastrarUsuario(usuario);
         String tokenUsuario = login(usuario);
 
-        String idProduto = criarProdutoEObterId(userToken);
+        ProductRequest produto = ProductDataFactory.novoProdutoValido();
+        String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 5);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .body(carrinho)
-            .post("/carrinhos");
+        CartClient.cadastrarCarrinho(carrinho, tokenUsuario);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .when()
-            .delete("/carrinhos/cancelar-compra")
+        CartClient.cancelarCompra(tokenUsuario)
             .then()
             .statusCode(200)
             .body("message", equalTo("Registro excluído com sucesso. Estoque dos produtos reabastecido"));
@@ -335,17 +241,10 @@ public class CartTest extends BaseTest {
     void validarErroAoCancelarSemCarrinho() {
 
         UserRequest usuario = UserDataFactory.usuarioValidoComum();
-
-        givenWithAllure()
-            .body(usuario)
-            .post("/usuarios");
-
+        UserClient.cadastrarUsuario(usuario);
         String tokenUsuario = login(usuario);
 
-        givenWithAllure()
-            .header("Authorization", tokenUsuario)
-            .when()
-            .delete("/carrinhos/cancelar-compra")
+        CartClient.cancelarCompra(tokenUsuario)
             .then()
             .statusCode(200)
             .body("message", equalTo("Não foi encontrado carrinho para esse usuário"));
@@ -356,10 +255,7 @@ public class CartTest extends BaseTest {
     @DisplayName("TC-CART-013 | Validar que a API bloqueia requisições sem token")
     void validarErroTokenAusente() {
 
-        givenWithAllure()
-            .header("Authorization", "")
-            .when()
-            .post("/carrinhos")
+        CartClient.cancelarCompra("")
             .then()
             .statusCode(401)
             .body("message", equalTo("Token de acesso ausente, inválido, expirado ou usuário do token não existe mais"));

@@ -1,12 +1,17 @@
 package com.serverest.tests;
 
+import com.serverest.client.CartClient;
+import com.serverest.client.ProductClient;
+import com.serverest.client.UserClient;
 import com.serverest.config.BaseTest;
 import com.serverest.datafactory.CartDataFactory;
 import com.serverest.datafactory.ProductDataFactory;
 import com.serverest.datafactory.UserDataFactory;
 
+import com.serverest.model.CartRequest;
+import com.serverest.model.ProductRequest;
 import com.serverest.model.UserRequest;
-import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
@@ -21,11 +26,10 @@ public class UsersTest extends BaseTest {
     @Tag("smoke")
     @DisplayName("TC-USERS-001 | Listar Usuarios")
     void listarUsuarios() {
-        givenWithAllure()
-                .when()
-                .get("/usuarios")
-                .then()
-                .statusCode(200);
+
+        UserClient.listarUsuarios()
+            .then()
+            .statusCode(200);
     }
 
     @Test
@@ -35,15 +39,11 @@ public class UsersTest extends BaseTest {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
 
-        givenWithAllure()
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .body("message", equalTo("Cadastro realizado com sucesso"))
-                .body("_id", notNullValue());
+        UserClient.cadastrarUsuario(user)
+            .then()
+            .statusCode(201)
+            .body("message", equalTo("Cadastro realizado com sucesso"))
+            .body("_id", notNullValue());
     }
 
     @Test
@@ -53,20 +53,14 @@ public class UsersTest extends BaseTest {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
 
-        givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201);
+        UserClient.cadastrarUsuario(user)
+            .then()
+            .statusCode(201);
 
-        givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(400)
-                .body("message", equalTo("Este email já está sendo usado"));
+        UserClient.cadastrarUsuario(user)
+            .then()
+            .statusCode(400)
+            .body("message", equalTo("Este email já está sendo usado"));
     }
 
     @Test
@@ -75,38 +69,26 @@ public class UsersTest extends BaseTest {
     void buscarUsuarioPorID() {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
+        String idValido = UserClient.cadastrarUsuario(user).path("_id");
 
-        String idValido = givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
-
-        givenWithAllure()
-                .when()
-                .get("/usuarios/" + idValido)
-                .then()
-                .statusCode(200)
-                .body("_id", equalTo(idValido))
-                .body("nome", equalTo(user.getNome()));
+        UserClient.buscarUsuarioPorId(idValido)
+            .then()
+            .statusCode(200)
+            .body("_id", equalTo(idValido))
+            .body("nome", equalTo(user.getNome()));
     }
 
     @Test
     @Tag("smoke")
-    @DisplayName("TC-USERS-004 | Buscar usuário por ID")
+    @DisplayName("TC-USERS-004 | Buscar usuário por ID inexistente")
     void buscarUsuarioPorIDNaoEcontrar() {
 
         String idInexistente = RandomStringUtils.randomAlphanumeric(16);
 
-        givenWithAllure()
-                .when()
-                .get("/usuarios/" + idInexistente)
-                .then()
-                .statusCode(400)
-                .body("message", equalTo("Usuário não encontrado"));
+        UserClient.buscarUsuarioPorId(idInexistente)
+            .then()
+            .statusCode(400)
+            .body("message", equalTo("Usuário não encontrado"));
     }
 
     @Test
@@ -115,25 +97,12 @@ public class UsersTest extends BaseTest {
     void excluirUsuarioPorId() {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
+        String idValido = UserClient.cadastrarUsuario(user).path("_id");
 
-        String idValido = givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
-
-
-        givenWithAllure()
-                .contentType(ContentType.JSON)
-                .when()
-                .delete("/usuarios/" + idValido)
-                .then()
-                .statusCode(200)
-                .body("message", equalTo("Registro excluído com sucesso"));
-
+        UserClient.excluirUsuario(idValido)
+            .then()
+            .statusCode(200)
+            .body("message", equalTo("Registro excluído com sucesso"));
     }
 
     @Test
@@ -142,44 +111,24 @@ public class UsersTest extends BaseTest {
     void tentarExcluirUsuarioComCarrinhoCadastrado() {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
+        String idValidoUsuario = UserClient.cadastrarUsuario(user).path("_id");
 
-        String idUsuario = givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
-
-        String idProduto = givenWithAllure()
-                .header("Authorization", userToken)
-                .body(ProductDataFactory.novoProdutoValido())
-                .when()
-                .post("/produtos")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
+        ProductRequest product = ProductDataFactory.novoProdutoValido();
+        String idValidoProduto = ProductClient.cadastrarProduto(product, userToken).path("_id");
 
         String tokenUsuario = login(user);
+        CartRequest cart = CartDataFactory.carrinhoComProdutos(idValidoProduto, 2);
 
-        givenWithAllure()
-                .header("Authorization", tokenUsuario)
-                .body(CartDataFactory.carrinhoComProdutos(idProduto, 2))
-                .when()
-                .post("/carrinhos")
-                .then()
-                .statusCode(201);
+        CartClient.cadastrarCarrinho(cart, tokenUsuario)
+            .then()
+            .statusCode(201);
 
-        givenWithAllure()
-                .header("Authorization", userToken)
-                .when()
-                .delete("/usuarios/" + idUsuario)
-                .then()
-                .statusCode(400)
-                .body("message", equalTo("Não é permitido excluir usuário com carrinho cadastrado"))
-                .body("idCarrinho", notNullValue());
+        Response response = UserClient.excluirUsuario(idValidoUsuario);
+
+        response.then()
+            .statusCode(400)
+            .body("message", equalTo("Não é permitido excluir usuário com carrinho cadastrado"))
+            .body("idCarrinho", notNullValue());
     }
 
     @Test
@@ -188,25 +137,14 @@ public class UsersTest extends BaseTest {
     void editarUsuario() {
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
-
-        String idValido = givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
+        String idValido = UserClient.cadastrarUsuario(user).path("_id");
 
         user.setNome("Nome Editado " + RandomStringUtils.randomAlphanumeric(4));
 
-        givenWithAllure()
-                .body(user)
-                .when()
-                .put("/usuarios/" + idValido)
-                .then()
-                .statusCode(200)
-                .body("message", equalTo("Registro alterado com sucesso"));
+        UserClient.editarUsuario(idValido, user)
+            .then()
+            .statusCode(200)
+            .body("message", equalTo("Registro alterado com sucesso"));
 
     }
 
@@ -214,19 +152,16 @@ public class UsersTest extends BaseTest {
     @Tag("smoke")
     @DisplayName("CT-USERS-008 | Criar usuário inexistente via PUT")
     void deveCriarUsuarioViaPutQuandoIdNaoExistir() {
+
         String idInexistente = RandomStringUtils.randomAlphanumeric(16);
 
         UserRequest user = UserDataFactory.usuarioValidoComum();
 
-        givenWithAllure()
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when()
-                .put("/usuarios/" + idInexistente)
-                .then()
-                .statusCode(201)
-                .body("message", equalTo("Cadastro realizado com sucesso"))
-                .body("_id", notNullValue());
+        UserClient.editarUsuario(idInexistente, user)
+            .then()
+            .statusCode(201)
+            .body("message", equalTo("Cadastro realizado com sucesso"))
+            .body("_id", notNullValue());
     }
 
     @Test
@@ -234,33 +169,23 @@ public class UsersTest extends BaseTest {
     @DisplayName("CT-USERS-008 | Tentar modificar usuario com email ja cadastrado")
     void deveTentarModificarDadosDaContaComEmailUtilizado() {
 
-        UserRequest user = UserDataFactory.usuarioValidoComum();
+        UserRequest userA = UserDataFactory.usuarioValidoComum();
+        UserClient.cadastrarUsuario(userA)
+            .then()
+            .statusCode(201);
 
-        UserRequest userEmailUsado = UserDataFactory.usuarioValidoComum();
+        UserRequest userB = UserDataFactory.usuarioValidoComum();
+        String idUsuarioB = UserClient.cadastrarUsuario(userB)
+            .then()
+            .statusCode(201)
+            .extract().path("_id");
 
-        givenWithAllure()
-                .body(user)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201);
+        userB.setEmail(userA.getEmail());
 
-        String idValido = givenWithAllure()
-                .body(userEmailUsado)
-                .when()
-                .post("/usuarios")
-                .then()
-                .statusCode(201)
-                .extract()
-                .path("_id");
+        Response response = UserClient.editarUsuario(idUsuarioB, userB);
 
-        givenWithAllure()
-                .contentType(ContentType.JSON)
-                .body(user)
-                .when()
-                .put("/usuarios/" + idValido)
-                .then()
-                .statusCode(400)
-                .body("message", equalTo("Este email já está sendo usado"));
+        response.then()
+            .statusCode(400)
+            .body("message", equalTo("Este email já está sendo usado"));
     }
 }
