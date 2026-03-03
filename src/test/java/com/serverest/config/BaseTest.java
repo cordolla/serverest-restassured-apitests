@@ -1,10 +1,12 @@
 package com.serverest.config;
 
+import com.serverest.client.CartClient;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import static io.restassured.RestAssured.given;
 
@@ -23,6 +25,11 @@ public abstract class BaseTest {
         );
     }
 
+    @BeforeEach
+    void limparCarrinhoAntigo() {
+        CartClient.concluirCompra(userToken);
+    }
+
     public static RequestSpecification givenWithAllure() {
         RequestSpecification spec = given()
             .filter(new AllureRestAssured())
@@ -34,4 +41,6 @@ public abstract class BaseTest {
 
         return spec;
     }
+
+
 }

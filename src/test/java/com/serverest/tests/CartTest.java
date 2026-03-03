@@ -156,8 +156,12 @@ public class CartTest extends BaseTest {
         String idProduto = ProductClient.cadastrarProduto(produto, userToken).path("_id");
 
         CartRequest carrinho = CartDataFactory.carrinhoComProdutos(idProduto, 1);
-        String idCarrinho = CartClient.cadastrarCarrinho(carrinho, userToken).path("_id");
 
+        String idCarrinho = CartClient.cadastrarCarrinho(carrinho, userToken)
+            .then()
+            .statusCode(201)
+            .extract()
+            .path("_id");
 
         CartClient.buscarCarrinhoPorId(idCarrinho)
             .then()
